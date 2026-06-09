@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: qa-intelligence-frontend
+    runtime: node
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      # Set this to your deployed backend API URL
+      # Example: https://qa-intelligence-api.onrender.com
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
