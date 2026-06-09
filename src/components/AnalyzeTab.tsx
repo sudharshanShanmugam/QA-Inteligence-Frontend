@@ -26,7 +26,7 @@ import SkipNextIcon from "@mui/icons-material/SkipNext";
 import {
   analyzeProject, clarifyProject, ClarifyQuestion, AnalyzeResult,
   getProjectAnalyses, deleteProjectAnalysis, clearProjectAnalyses,
-  StoredAnalysis,
+  StoredAnalysis, getSettings,
 } from "@/lib/api";
 import ResultsPanel from "./results/ResultsPanel";
 import ComparePanel from "./results/ComparePanel";
@@ -677,7 +677,7 @@ function HistorySection({ projectId, history, setHistory, expandedHistoryId, set
   );
 }
 
-export default function AnalyzeTab({ kbChunks, projectId, onAnalyzeComplete, onAnalysisDone, historyOnly = false }: { kbChunks: number; projectId: string; onAnalyzeComplete?: () => void; onAnalysisDone?: (context: string) => void; historyOnly?: boolean }) {
+export default function AnalyzeTab({ kbChunks, projectId, onAnalyzeComplete, onAnalysisDone, historyOnly = false, llmSettingsVersion = 0 }: { kbChunks: number; projectId: string; onAnalyzeComplete?: () => void; onAnalysisDone?: (context: string) => void; historyOnly?: boolean; llmSettingsVersion?: number }) {
   const [story, setStory] = useState("");
   const [phase, setPhase] = useState<Phase>("input");
   const [questions, setQuestions] = useState<ClarifyQuestion[]>([]);
@@ -690,6 +690,7 @@ export default function AnalyzeTab({ kbChunks, projectId, onAnalyzeComplete, onA
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [llmReady, setLlmReady] = useState<boolean | null>(null);
   const storyRef = useRef<HTMLTextAreaElement>(null);
 
   const loading = phase === "analyzing";
@@ -707,6 +708,13 @@ export default function AnalyzeTab({ kbChunks, projectId, onAnalyzeComplete, onA
     return () => { cancelled = true; };
   }, [projectId]);
 
+  // Check LLM readiness — re-run whenever user applies settings in the sidebar
+  useEffect(() => {
+    getSettings()
+      .then(s => setLlmReady(s.api_key_set))
+      .catch(() => setLlmReady(false));
+  }, [llmSettingsVersion]);
+
   useEffect(() => {
     if (phase !== "analyzing") { setPipelineStep(0); return; }
     const timer = setInterval(() => {
@@ -716,7 +724,7 @@ export default function AnalyzeTab({ kbChunks, projectId, onAnalyzeComplete, onA
   }, [phase]);
 
   const handleFirstSubmit = async () => {
-    if (!story.trim()) return;
+    if (!story.trim() || !llmReady) return;
     setError(null);
     setResult(null);
     setClarifyFailed(false);
@@ -831,6 +839,17 @@ export default function AnalyzeTab({ kbChunks, projectId, onAnalyzeComplete, onA
         </Box>
       </Box>
 
+      {/* ── LLM not configured banner ── */}
+      {llmReady === false && (
+        <Alert
+          severity="warning"
+          icon={<WarningAmberIcon fontSize="inherit" />}
+          sx={{ borderRadius: "14px", border: "1px solid #fde68a", bgcolor: "#fffbeb" }}
+        >
+          <strong>LLM settings required.</strong> Open the sidebar, go to <strong>LLM Settings</strong>, enter your provider, model, and API key, then click <strong>Apply</strong> before generating.
+        </Alert>
+      )}
+
       {/* ── Prompt studio card ── */}
       <Box sx={{
         bgcolor: "background.paper", borderRadius: "20px", overflow: "hidden",
@@ -924,17 +943,17 @@ export default function AnalyzeTab({ kbChunks, projectId, onAnalyzeComplete, onA
 
           <Box
             component="button"
-            disabled={phase !== "input" || !hasContent}
+            disabled={phase !== "input" || !hasContent || !llmReady}
             onClick={handleFirstSubmit}
             sx={{
               display: "flex", alignItems: "center", gap: "8px",
               px: "20px", py: "9px", borderRadius: "12px",
               fontSize: 13.5, fontWeight: 700,
-              border: "none", cursor: (phase !== "input" || !hasContent) ? "not-allowed" : "pointer",
+              border: "none", cursor: (phase !== "input" || !hasContent || !llmReady) ? "not-allowed" : "pointer",
               transition: "all 0.2s",
               ...(phase === "clarifying" && questions.length === 0
                 ? { bgcolor: "#818cf8", color: "white" }
-                : hasContent && phase === "input"
+                : hasContent && phase === "input" && llmReady
                 ? { bgcolor: "#4f46e5", color: "white", boxShadow: "0 4px 14px rgba(79,70,229,0.35)", "&:hover": { bgcolor: "#4338ca", boxShadow: "0 6px 20px rgba(79,70,229,0.4)" }, "&:active": { transform: "scale(0.97)" } }
                 : { bgcolor: "background.default", color: "text.disabled", border: "1px solid", borderColor: "divider" }
               ),

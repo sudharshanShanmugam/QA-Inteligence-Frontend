@@ -34,6 +34,7 @@ export default function ProjectPage() {
   const [projectName, setProjectName] = useState("");
   const [loadingName, setLoadingName] = useState(true);
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
+  const [llmSettingsVersion, setLlmSettingsVersion] = useState(0);
   const [analysisContext, setAnalysisContext] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -92,7 +93,7 @@ export default function ProjectPage() {
         overflow: "hidden",
         transition: "width 0.25s cubic-bezier(0.4,0,0.2,1)",
       }}>
-        <Sidebar projectId={projectId} onKBChange={loadKB} refreshKey={sidebarRefreshKey} />
+        <Sidebar projectId={projectId} onKBChange={loadKB} onSettingsChange={() => setLlmSettingsVersion(v => v + 1)} refreshKey={sidebarRefreshKey} />
       </Box>
 
       {/* ── Main area ── */}
@@ -193,6 +194,7 @@ export default function ProjectPage() {
               onAnalyzeComplete={loadKB}
               onAnalysisDone={(ctx) => setAnalysisContext(ctx)}
               historyOnly={tab === 2}
+              llmSettingsVersion={llmSettingsVersion}
             />
           </Box>
         </Box>

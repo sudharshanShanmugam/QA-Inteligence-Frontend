@@ -25,10 +25,11 @@ import {
 interface SidebarProps {
   projectId: string;
   onKBChange?: () => void;
+  onSettingsChange?: () => void;
   refreshKey?: number;
 }
 
-export default function Sidebar({ projectId, onKBChange, refreshKey = 0 }: SidebarProps) {
+export default function Sidebar({ projectId, onKBChange, onSettingsChange, refreshKey = 0 }: SidebarProps) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [kb, setKb] = useState<KBStatus | null>(null);
   const [projectUsage, setProjectUsage] = useState<ProjectUsage | null>(null);
@@ -83,6 +84,7 @@ export default function Sidebar({ projectId, onKBChange, refreshKey = 0 }: Sideb
       setLlmOpen(false);
       const s = await getSettings();
       setSettings(s);
+      onSettingsChange?.();
       setTimeout(() => setSaveOk(false), 3000);
     } catch (e: unknown) {
       setSaveErr(e instanceof Error ? e.message : "Failed to apply");

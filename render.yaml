@@ -8,4 +8,4 @@ services:
       # Set this to your deployed backend API URL
       # Example: https://qa-intelligence-api.onrender.com
       - key: NEXT_PUBLIC_API_URL
-        sync: false
+        value: https://qa-intelligence-api.onrender.com

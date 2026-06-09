@@ -16,6 +16,7 @@ export interface AppSettings {
   provider: string;
   embed_model: string;
   entity_model: string;
+  api_key_set: boolean;
   usage: { input_tokens: number; output_tokens: number };
   cost: {
     input_cost: number;
